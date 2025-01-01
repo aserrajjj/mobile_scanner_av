@@ -179,6 +179,8 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin {
                                 details: nil))
             return
         }
+        print("Setting shouldConsiderInvertedImages to \(shouldConsiderInvertedImages!)")
+        
         mobileScanner.setShouldConsiderInvertedImages(shouldConsiderInvertedImages!)
         result(nil)
     }
