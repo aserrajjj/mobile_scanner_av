@@ -731,7 +731,6 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     /// Gets called when a new image is added to the buffer
     public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            print("captureOutput: Could not get imageBuffer")
             return
         }
         latestBuffer = imageBuffer
@@ -753,16 +752,13 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
             // 3. Log if we are toggling frames
                    if shouldConsiderInvertedImages {
                        invertCurrentImage = !invertCurrentImage
-                       print("captureOutput: shouldConsiderInvertedImages is ON")
                    } else {
                        // Force it to false if the user turned off inverting
                        invertCurrentImage = false
-                       print("captureOutput: shouldConsiderInvertedImages is OFF")
                    }
 
                    let uiImage: UIImage
                    if invertCurrentImage {
-                       print("captureOutput: Inverting this frame’s colors")
                        uiImage = self.invertInputImage(image: latestBuffer.image)
                    } else {
                        uiImage = latestBuffer.image
@@ -800,7 +796,7 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     /// Start scanning for barcodes
     func start(barcodeScannerOptions: BarcodeScannerOptions?, cameraPosition: AVCaptureDevice.Position, shouldConsiderInvertedImages: Bool, torch: Bool, detectionSpeed: DetectionSpeed, completion: @escaping (MobileScannerStartParameters) -> ()) throws {
         self.detectionSpeed = detectionSpeed
-        self.shouldConsiderInvertedImages = shouldConsiderInvertedImages
+        //self.shouldConsiderInvertedImages = shouldConsiderInvertedImages
         if (device != nil || captureSession != nil) {
             throw MobileScannerError.alreadyStarted
         }
