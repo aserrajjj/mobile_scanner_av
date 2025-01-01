@@ -271,7 +271,7 @@ class MobileScannerWeb extends MobileScannerPlatform {
       );
     }
 
-    _barcodeReader = ZXingBarcodeReader();
+    _barcodeReader = ZXingBarcodeReader() as BarcodeReader?;
 
     await _barcodeReader?.maybeLoadLibrary(
       alternateScriptUrl: _alternateScriptUrl,

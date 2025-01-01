@@ -22,7 +22,7 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
 
   /// The name of the error event that is sent when a barcode scan error occurs.
   @visibleForTesting
-  static const String kBarcodeErrorEventName = 'MOBILE_SCANNER_BARCODE_ERROR';
+  static const String kBarcodeErrorEventName = 'mobile_scanner_BARCODE_ERROR';
 
   /// The method channel used to interact with the native platform.
   @visibleForTesting
