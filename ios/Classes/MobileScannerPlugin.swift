@@ -6,7 +6,7 @@ import UIKit
 
 public class MobileScannerPlugin: NSObject, FlutterPlugin {
     
-    /// The mobile scanner object that handles all logic
+    /// The mobile scanner object that handles all logic.
     private let mobileScanner: MobileScanner
     
     /// The handler sends all information via an event channel back to Flutter
