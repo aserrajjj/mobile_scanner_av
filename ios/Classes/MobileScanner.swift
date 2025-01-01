@@ -485,7 +485,7 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
         scanner.process(visionImage, completion: callback)
     }
 
-    private func invertInputImage(image: UIImage) -> UIImage {
+    /* private func invertInputImage(image: UIImage) -> UIImage {
         let ciImage = CIImage(image: image)
 
         let filter: CIFilter?
@@ -502,7 +502,27 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
         let cgImage = convertCIImageToCGImage(inputImage: outputImage!)
 
         return UIImage(cgImage: cgImage!, scale: image.scale, orientation: image.imageOrientation)
+    } */
+
+    private func invertInputImage(image: UIImage) -> UIImage {
+    guard let ciImage = CIImage(image: image) else {
+        return image
     }
+
+    // Instead of using `CIFilter.colorInvert()`, just do this:
+    let filter = CIFilter(name: "CIColorInvert")
+    filter?.setValue(ciImage, forKey: kCIInputImageKey)
+
+    guard
+        let outputImage = filter?.outputImage,
+        let cgImage = convertCIImageToCGImage(inputImage: outputImage)
+    else {
+        return image
+    }
+
+    return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+}
+
 
     var barcodesString: Array<String?>?
 
