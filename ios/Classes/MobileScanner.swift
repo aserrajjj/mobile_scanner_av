@@ -469,7 +469,7 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
         //image.orientation = imageOrientation(
         let uiImage: UIImage
         if (invertCurrentImage) {
-            uiImage = self.invertInputImage(image: uiImage)
+            uiImage = self.invertInputImage(image: image)
         } else {
             uiImage = image
         }
