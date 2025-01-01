@@ -291,9 +291,13 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
   @override
   Future<void> setShouldConsiderInvertedImages(
       bool shouldConsiderInvertedImages) async {
-    await methodChannel.invokeMethod<void>(
+    /* await methodChannel.invokeMethod<void>(
       'setShouldConsiderInvertedImages',
       {'shouldConsiderInvertedImages': shouldConsiderInvertedImages},
+    ); */
+    await methodChannel.invokeMethod<bool>(
+      'setShouldConsiderInvertedImages',
+      true, // no extra map/dict
     );
   }
 

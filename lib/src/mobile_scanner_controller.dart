@@ -259,6 +259,17 @@ class MobileScannerController extends ValueNotifier<MobileScannerState> {
     await MobileScannerPlatform.instance.setZoomScale(clampedZoomScale);
   }
 
+  /// Toggle whether or not inverted images (white-on-black codes)
+  /// should be considered during scanning.
+  Future<void> setShouldConsiderInvertedImages(bool shouldInvert) async {
+    // Optional: If you only want to allow this while the scanner is running,
+    // you could call `_throwIfNotInitialized();`
+    // or check `value.isInitialized` / `value.isRunning`.
+
+    await MobileScannerPlatform.instance
+        .setShouldConsiderInvertedImages(shouldInvert);
+  }
+
   /// Start scanning for barcodes.
   ///
   /// The [cameraDirection] can be used to specify the camera direction.

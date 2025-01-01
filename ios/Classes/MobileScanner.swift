@@ -504,7 +504,7 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
         return UIImage(cgImage: cgImage!, scale: image.scale, orientation: image.imageOrientation)
     } */
 
-    private func invertInputImage(image: UIImage) -> UIImage {
+    /* private func invertInputImage(image: UIImage) -> UIImage {
     guard let ciImage = CIImage(image: image) else {
         return image
     }
@@ -521,7 +521,33 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     }
 
     return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
-}
+} */
+    private func invertInputImage(image: UIImage) -> UIImage {
+        guard let ciImage = CIImage(image: image) else {
+            return image
+        }
+
+        // This “if #available(iOS 13, *)” is not enough to safely use colorInvert().
+        // colorInvert() was introduced in iOS 16 in Swift. So do a run-time check:
+        let filter: CIFilter?
+        if #available(iOS 16.0, *) {
+            filter = CIFilter.colorInvert()
+        } else {
+            // Fallback to the old style constructor
+            filter = CIFilter(name: "CIColorInvert")
+        }
+
+        filter?.setValue(ciImage, forKey: kCIInputImageKey)
+        guard
+            let outputImage = filter?.outputImage,
+            let cgImage = convertCIImageToCGImage(inputImage: outputImage)
+        else {
+            return image
+
+        }
+        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+    }
+
 
 
     var barcodesString: Array<String?>?
