@@ -734,17 +734,12 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
             print("captureOutput: Could not get imageBuffer")
             return
         }
-        // 1. Track that a new frame is being processed
-        print("captureOutput: Received new frame")
         latestBuffer = imageBuffer
         registry?.textureFrameAvailable(textureId)
         
         let currentTime = Date().timeIntervalSince1970
         let eligibleForScan = currentTime > nextScanTime && !imagesCurrentlyBeingProcessed
-        
-        // 2. Debug logging for detection speed
-            print("captureOutput: detectionSpeed = \(detectionSpeed), shouldConsiderInvertedImages = \(shouldConsiderInvertedImages)")
-            print("captureOutput: currentTime = \(currentTime), nextScanTime = \(nextScanTime), eligibleForScan = \(eligibleForScan)")
+
         
         if ((detectionSpeed == DetectionSpeed.normal || detectionSpeed == DetectionSpeed.noDuplicates) && eligibleForScan || detectionSpeed == DetectionSpeed.unrestricted) {
 
@@ -758,11 +753,11 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
             // 3. Log if we are toggling frames
                    if shouldConsiderInvertedImages {
                        invertCurrentImage = !invertCurrentImage
-                       print("captureOutput: shouldConsiderInvertedImages is ON, flipping invertCurrentImage to \(invertCurrentImage)")
+                       print("captureOutput: shouldConsiderInvertedImages is ON")
                    } else {
                        // Force it to false if the user turned off inverting
                        invertCurrentImage = false
-                       print("captureOutput: shouldConsiderInvertedImages is OFF, setting invertCurrentImage to false")
+                       print("captureOutput: shouldConsiderInvertedImages is OFF")
                    }
 
                    let uiImage: UIImage
