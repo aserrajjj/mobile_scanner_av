@@ -207,8 +207,10 @@ class MobileScannerController extends ValueNotifier<MobileScannerState> {
   ///
   /// If an error occurred during the analysis of the image,
   /// a [MobileScannerBarcodeException] error is thrown.
-  Future<BarcodeCapture?> analyzeImage(String path,
-      {List<BarcodeFormat> formats = const <BarcodeFormat>[]}) {
+  Future<BarcodeCapture?> analyzeImage(
+    String path, {
+    List<BarcodeFormat> formats = const <BarcodeFormat>[],
+  }) {
     return MobileScannerPlatform.instance.analyzeImage(path, formats: formats);
   }
 
