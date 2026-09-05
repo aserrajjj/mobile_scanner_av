@@ -13,6 +13,7 @@ void main() {
 
         expect(capture.barcodes, isEmpty);
         expect(capture.image, isNull);
+        expect(capture.performance, isNull);
         expect(capture.raw, isNull);
         expect(capture.size, Size.zero);
       });

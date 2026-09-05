@@ -38,8 +38,10 @@ class MobileScannerController extends ValueNotifier<MobileScannerState> {
     this.invertImage = false,
     this.autoZoom = false,
     this.initialZoom,
-  }) : detectionTimeoutMs =
-           detectionSpeed == DetectionSpeed.normal ? detectionTimeoutMs : 0,
+    this.performanceMetricsEnabled = false,
+  }) : detectionTimeoutMs = detectionSpeed == DetectionSpeed.normal
+           ? detectionTimeoutMs
+           : 0,
        assert(
          detectionTimeoutMs >= 0,
          'The detection timeout must be greater than or equal to 0.',
@@ -81,6 +83,13 @@ class MobileScannerController extends ValueNotifier<MobileScannerState> {
   /// By default this is set to `250` milliseconds,
   /// which prevents memory issues on older devices.
   final int detectionTimeoutMs;
+
+  /// Whether native capture and decoder timing metadata should be attached to
+  /// barcode events.
+  ///
+  /// Defaults to false. Enabling this performs only timestamp collection and
+  /// small map allocation for successful barcode captures.
+  final bool performanceMetricsEnabled;
 
   /// The facing direction for the camera.
   ///
@@ -285,10 +294,9 @@ class MobileScannerController extends ValueNotifier<MobileScannerState> {
     // If the device does not have a torch, do not report "off".
     value = value.copyWith(
       isRunning: false,
-      torchState:
-          oldTorchState == TorchState.unavailable
-              ? TorchState.unavailable
-              : TorchState.off,
+      torchState: oldTorchState == TorchState.unavailable
+          ? TorchState.unavailable
+          : TorchState.off,
     );
     return true;
   }
@@ -480,6 +488,7 @@ class MobileScannerController extends ValueNotifier<MobileScannerState> {
       invertImage: invertImage,
       autoZoom: autoZoom,
       initialZoom: initialZoom,
+      performanceMetricsEnabled: performanceMetricsEnabled,
     );
 
     try {
@@ -629,8 +638,9 @@ class MobileScannerController extends ValueNotifier<MobileScannerState> {
     );
 
     // Filter out 'any' and keep only specific lens types.
-    final specificLenses =
-        supportedLenses.where((lens) => lens != CameraLensType.any).toList();
+    final specificLenses = supportedLenses
+        .where((lens) => lens != CameraLensType.any)
+        .toList();
 
     // Do nothing if there are less than 2 lens types available.
     if (specificLenses.length < 2) {
@@ -646,10 +656,9 @@ class MobileScannerController extends ValueNotifier<MobileScannerState> {
 
     // Find the current lens type from state (default to normal if unknown).
     final stateLensType = value.cameraLensType;
-    final currentLens =
-        stateLensType == CameraLensType.any
-            ? CameraLensType.normal
-            : stateLensType;
+    final currentLens = stateLensType == CameraLensType.any
+        ? CameraLensType.normal
+        : stateLensType;
 
     // Find the next available lens in the cycle.
     final currentIndex = lensCycle.indexOf(currentLens);
@@ -761,9 +770,7 @@ class MobileScannerController extends ValueNotifier<MobileScannerState> {
   ///   print('Available lenses: $supportedLenses');
   /// }
   /// ```
-  Future<Set<CameraLensType>> getSupportedLenses({
-    CameraFacing? facing,
-  }) async {
+  Future<Set<CameraLensType>> getSupportedLenses({CameraFacing? facing}) async {
     if (_isDisposed) {
       throw MobileScannerException(
         errorCode: MobileScannerErrorCode.controllerDisposed,

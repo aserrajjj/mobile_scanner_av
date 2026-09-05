@@ -52,6 +52,12 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
     
     var standardZoomFactor: CGFloat = 1
 
+    /// Benchmark-only timing metadata. Disabled by default.
+    var performanceMetricsEnabled = false
+
+    /// Sequence number for successful barcode events in the current session.
+    var performanceSequence: Int64 = 0
+
 #if os(iOS)
     var interfaceOrientationObserver: NSObjectProtocol?
 #endif
@@ -153,6 +159,7 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
     
     // Gets called when a new image is added to the buffer
     public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        let frameReceivedUs = performanceMetricsEnabled ? Self.monotonicMicroseconds() : 0
         // Ignore invalid texture id.
         if textureId == nil {
             return
@@ -189,10 +196,12 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
                 }
                 
                 let imageRequestHandler = VNImageRequestHandler(cgImage: currentImage)
+                let decodeStartedUs = self.performanceMetricsEnabled ? Self.monotonicMicroseconds() : 0
                 
                 do {
                     let barcodeRequest: VNDetectBarcodesRequest = VNDetectBarcodesRequest(completionHandler: { [weak self] (request, error) in
                         self?.imagesCurrentlyBeingProcessed = false
+                        let decodeCompletedUs = self?.performanceMetricsEnabled == true ? Self.monotonicMicroseconds() : 0
 
                         if error != nil {
                             DispatchQueue.main.async {
@@ -223,6 +232,9 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
                         }
 
                         DispatchQueue.main.async {
+                            guard let self = self else {
+                                return
+                            }
 #if os(iOS)
                             // Always report portrait-ized dimensions on iOS,
                             // matching the convention used in start().
@@ -241,17 +253,37 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
                             ]
 #endif
 
-                            self?.sink?([
+                            let barcodeData = barcodes.map({
+                                $0.toMap(
+                                    imageWidth: currentImage.width,
+                                    imageHeight: currentImage.height,
+                                    scanWindow: self.scanWindow
+                                )
+                            })
+
+                            var event: [String: Any] = [
                                 "name": "barcode",
                                 "image": imageData,
-                                "data": barcodes.map({
-                                    $0.toMap(
-                                        imageWidth: currentImage.width,
-                                        imageHeight: currentImage.height,
-                                        scanWindow: self?.scanWindow
-                                    )
-                                }),
-                            ])
+                                "data": barcodeData,
+                            ]
+
+                            if self.performanceMetricsEnabled {
+                                self.performanceSequence += 1
+                                let eventPreparedUs = Self.monotonicMicroseconds()
+                                let eventSentUs = Self.monotonicMicroseconds()
+                                event["performance"] = [
+                                    "platform": "apple",
+                                    "sequence": self.performanceSequence,
+                                    "frameReceivedUs": frameReceivedUs,
+                                    "decodeStartedUs": decodeStartedUs,
+                                    "decodeCompletedUs": decodeCompletedUs,
+                                    "eventPreparedUs": eventPreparedUs,
+                                    "eventSentUs": eventSentUs,
+                                    "eventSentEpochUs": Int64(Date().timeIntervalSince1970 * 1_000_000),
+                                ]
+                            }
+
+                            self.sink?(event)
                         }
                     })
 
@@ -373,6 +405,8 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
         let lensType:Int = argReader.int(key: "lensType") ?? -1
         let speed:Int = argReader.int(key: "speed") ?? 0
         let timeoutMs:Int = argReader.int(key: "timeout") ?? 0
+        performanceMetricsEnabled = argReader.bool(key: "performanceMetrics") ?? false
+        performanceSequence = 0
         let initialZoom: CGFloat? = {
             if let zoomValue = argReader.float(key: "initialZoom") {
                 return CGFloat(zoomValue)
@@ -531,6 +565,10 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
                 result(answer)
             }
         }
+    }
+
+    private static func monotonicMicroseconds() -> Int64 {
+        return Int64(DispatchTime.now().uptimeNanoseconds / 1_000)
     }
 
     /// Get the preferred video format for the given video output.

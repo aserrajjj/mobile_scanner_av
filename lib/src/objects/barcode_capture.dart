@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:mobile_scanner/src/objects/barcode.dart';
+import 'package:mobile_scanner/src/objects/barcode_capture_performance.dart';
 
 /// This class represents a scanned barcode.
 class BarcodeCapture {
@@ -12,6 +13,7 @@ class BarcodeCapture {
   const BarcodeCapture({
     this.barcodes = const <Barcode>[],
     this.image,
+    this.performance,
     this.raw,
     this.size = Size.zero,
   });
@@ -26,6 +28,9 @@ class BarcodeCapture {
   ///
   /// This is always null if [MobileScannerController.returnImage] is false.
   final Uint8List? image;
+
+  /// Optional timing metadata when performance instrumentation is enabled.
+  final BarcodeCapturePerformance? performance;
 
   /// The raw data of the barcode scan.
   ///

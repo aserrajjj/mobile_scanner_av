@@ -20,6 +20,7 @@ export 'src/objects/address.dart';
 export 'src/objects/barcode.dart';
 export 'src/objects/barcode_bytes.dart';
 export 'src/objects/barcode_capture.dart';
+export 'src/objects/barcode_capture_performance.dart';
 export 'src/objects/calendar_event.dart';
 export 'src/objects/contact_info.dart';
 export 'src/objects/driver_license.dart';

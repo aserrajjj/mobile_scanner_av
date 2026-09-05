@@ -2,6 +2,7 @@ package dev.steenbakker.mobile_scanner
 
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 
@@ -24,9 +25,23 @@ class BarcodeHandler(binaryMessenger: BinaryMessenger) : EventChannel.StreamHand
         }
     }
 
-    fun publishEvent(event: Map<String, Any>) {
+    fun publishEvent(event: Map<String, Any?>) {
         Handler(Looper.getMainLooper()).post {
-            eventSink?.success(event)
+            val outgoingEvent = event.toMutableMap()
+            val performance = event["performance"] as? Map<*, *>
+
+            if (performance != null) {
+                val completedPerformance = performance.entries.associate {
+                    it.key.toString() to it.value
+                }.toMutableMap()
+                completedPerformance["eventSentUs"] =
+                    SystemClock.elapsedRealtimeNanos() / 1_000L
+                completedPerformance["eventSentEpochUs"] =
+                    System.currentTimeMillis() * 1_000L
+                outgoingEvent["performance"] = completedPerformance
+            }
+
+            eventSink?.success(outgoingEvent)
         }
     }
 

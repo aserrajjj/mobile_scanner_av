@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,7 @@ import 'package:mobile_scanner/src/mobile_scanner_platform_interface.dart';
 import 'package:mobile_scanner/src/mobile_scanner_view_attributes.dart';
 import 'package:mobile_scanner/src/objects/barcode.dart';
 import 'package:mobile_scanner/src/objects/barcode_capture.dart';
+import 'package:mobile_scanner/src/objects/barcode_capture_performance.dart';
 import 'package:mobile_scanner/src/objects/start_options.dart';
 import 'package:mobile_scanner/src/utils/parse_device_orientation_extension.dart';
 
@@ -160,6 +162,15 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
     if (defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS) {
+      final performanceData = event['performance'] as Map<Object?, Object?>?;
+      final performance =
+          performanceData == null
+              ? null
+              : BarcodeCapturePerformance.fromNative(
+                performanceData,
+                dartReceivedUs: Timeline.now,
+                dartReceivedEpochUs: DateTime.now().microsecondsSinceEpoch,
+              );
       final imageData = event['image'] as Map<Object?, Object?>?;
       final image = imageData?['bytes'] as Uint8List?;
       final width = imageData?['width'] as double?;
@@ -169,6 +180,7 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
         raw: event,
         barcodes: barcodes.map(Barcode.fromNative).toList(),
         image: image,
+        performance: performance,
         size: width == null || height == null ? Size.zero : Size(width, height),
       );
     }
@@ -506,9 +518,7 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
   }
 
   @override
-  Future<Set<CameraLensType>> getSupportedLenses({
-    CameraFacing? facing,
-  }) async {
+  Future<Set<CameraLensType>> getSupportedLenses({CameraFacing? facing}) async {
     final lensTypes = await methodChannel.invokeListMethod<Object?>(
       kGetSupportedLensesMethodName,
       facing != null ? {'facing': facing.rawValue} : null,

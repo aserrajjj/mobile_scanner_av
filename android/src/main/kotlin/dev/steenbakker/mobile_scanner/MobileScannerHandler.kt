@@ -65,8 +65,8 @@ class MobileScannerHandler(
 
     private var analyzerResult: MethodChannel.Result? = null
 
-    private val callback: MobileScannerCallback = { barcodes: List<Map<String, Any?>>, image: ByteArray?, width: Int?, height: Int? ->
-        barcodeHandler.publishEvent(mapOf(
+    private val callback: MobileScannerCallback = { barcodes: List<Map<String, Any?>>, image: ByteArray?, width: Int?, height: Int?, performance: Map<String, Any>? ->
+        val event = mutableMapOf<String, Any?>(
             "name" to "barcode",
             "data" to barcodes,
             // The image dimensions are always provided.
@@ -76,7 +76,11 @@ class MobileScannerHandler(
                 "width" to width?.toDouble(),
                 "height" to height?.toDouble(),
             )
-        ))
+        )
+        if (performance != null) {
+            event["performance"] = performance
+        }
+        barcodeHandler.publishEvent(event)
     }
 
     private val errorCallback: MobileScannerErrorCallback = {error: String ->
@@ -183,6 +187,8 @@ class MobileScannerHandler(
         }
         val invertImage: Boolean = call.argument<Boolean>("invertImage") ?: false
         val initialZoom: Double? = call.argument<Double?>("initialZoom")
+        val performanceMetricsEnabled: Boolean =
+            call.argument<Boolean>("performanceMetrics") ?: false
 
         val barcodeScannerOptions: BarcodeScannerOptions? = buildBarcodeScannerOptions(formats, autoZoom)
 
@@ -253,7 +259,8 @@ class MobileScannerHandler(
             timeout.toLong(),
             cameraResolution,
             invertImage,
-            initialZoom
+            initialZoom,
+            performanceMetricsEnabled
         )
     }
 

@@ -20,6 +20,7 @@ class StartOptions {
     required this.invertImage,
     required this.autoZoom,
     required this.initialZoom,
+    this.performanceMetricsEnabled = false,
   });
 
   /// The direction for the camera.
@@ -68,6 +69,9 @@ class StartOptions {
   /// Currently only supported on iOS, MacOS and Android.
   final double? initialZoom;
 
+  /// Whether native timing metadata should be attached to barcode events.
+  final bool performanceMetricsEnabled;
+
   /// Converts this object to a map.
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -87,6 +91,7 @@ class StartOptions {
       'invertImage': invertImage,
       'autoZoom': autoZoom,
       'initialZoom': initialZoom,
+      if (performanceMetricsEnabled) 'performanceMetrics': true,
     };
   }
 }

@@ -58,6 +58,25 @@ void main() {
       expect(map['cameraResolution'], [1920, 1080]);
     });
 
+    test('toMap includes performance metrics only when enabled', () {
+      const options = StartOptions(
+        cameraDirection: CameraFacing.back,
+        cameraLensType: CameraLensType.any,
+        cameraResolution: null,
+        detectionSpeed: DetectionSpeed.normal,
+        detectionTimeoutMs: 250,
+        formats: [],
+        returnImage: false,
+        torchEnabled: false,
+        invertImage: false,
+        autoZoom: false,
+        initialZoom: null,
+        performanceMetricsEnabled: true,
+      );
+
+      expect(options.toMap()['performanceMetrics'], true);
+    });
+
     test('toMap excludes camera resolution when null', () {
       const options = StartOptions(
         cameraDirection: CameraFacing.back,

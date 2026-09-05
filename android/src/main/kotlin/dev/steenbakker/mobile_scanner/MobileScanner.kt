@@ -6,6 +6,7 @@ import android.graphics.Rect
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import android.util.Size
 import android.view.Surface
@@ -49,6 +50,7 @@ import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.roundToInt
 
 class MobileScanner(
@@ -75,6 +77,7 @@ class MobileScanner(
     private var scannerTimeout = false
     private var imageAnalysis: ImageAnalysis? = null
     private var analysisExecutor = Executors.newSingleThreadExecutor()
+    private val performanceSequence = AtomicLong(0)
 
     /// Configurable variables
     var scanWindow: List<Float>? = null
@@ -83,6 +86,7 @@ class MobileScanner(
     private var detectionTimeout: Long = 250
     private var returnImage = false
     private var isPaused = false
+    private var performanceMetricsEnabled = false
 
     companion object {
         // Configure the `ProcessCameraProvider` to only log errors.
@@ -112,6 +116,7 @@ class MobileScanner(
      */
     @ExperimentalGetImage
     val captureOutput = ImageAnalysis.Analyzer { imageProxy ->
+        val frameReceivedUs = if (performanceMetricsEnabled) monotonicUs() else 0L
         val mediaImage = imageProxy.image ?: return@Analyzer
 
         if (detectionSpeed == DetectionSpeed.NORMAL && scannerTimeout) {
@@ -133,8 +138,10 @@ class MobileScanner(
             InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
         }
 
+        val decodeStartedUs = if (performanceMetricsEnabled) monotonicUs() else 0L
         scanner?.let {
             it.process(inputImage).addOnSuccessListener { barcodes ->
+                val decodeCompletedUs = if (performanceMetricsEnabled) monotonicUs() else 0L
                 if (detectionSpeed == DetectionSpeed.NO_DUPLICATES) {
                     val newScannedBarcodes = barcodes.mapNotNull {
                         barcode -> barcode.rawValue
@@ -175,7 +182,12 @@ class MobileScanner(
                         barcodeMap,
                         null,
                         if (portrait) inputImage.width else inputImage.height,
-                        if (portrait) inputImage.height else inputImage.width)
+                        if (portrait) inputImage.height else inputImage.width,
+                        createPerformancePayload(
+                            frameReceivedUs,
+                            decodeStartedUs,
+                            decodeCompletedUs
+                        ))
                     // Clean up the inverted bitmap if we created one
                     invertedBitmap?.recycle()
                     imageProxy.close()
@@ -215,7 +227,12 @@ class MobileScanner(
                         barcodeMap,
                         byteArray,
                         bmWidth,
-                        bmHeight
+                        bmHeight,
+                        createPerformancePayload(
+                            frameReceivedUs,
+                            decodeStartedUs,
+                            decodeCompletedUs
+                        )
                     )
 
                     // Clean up resources
@@ -359,11 +376,14 @@ class MobileScanner(
         cameraResolutionWanted: Size?,
         invertImage: Boolean,
         initialZoom: Double?,
+        performanceMetricsEnabled: Boolean,
     ) {
         this.detectionSpeed = detectionSpeed
         this.detectionTimeout = detectionTimeout
         this.returnImage = returnImage
         this.invertImage = invertImage
+        this.performanceMetricsEnabled = performanceMetricsEnabled
+        performanceSequence.set(0)
 
         
         if (camera?.cameraInfo != null && preview != null && surfaceProducer != null && !isPaused) {
@@ -524,6 +544,27 @@ class MobileScanner(
             )
         }, mainExecutor)
 
+    }
+
+    private fun monotonicUs(): Long = SystemClock.elapsedRealtimeNanos() / 1_000L
+
+    private fun createPerformancePayload(
+        frameReceivedUs: Long,
+        decodeStartedUs: Long,
+        decodeCompletedUs: Long,
+    ): Map<String, Any>? {
+        if (!performanceMetricsEnabled) {
+            return null
+        }
+
+        return mapOf(
+            "platform" to "android",
+            "sequence" to performanceSequence.incrementAndGet(),
+            "frameReceivedUs" to frameReceivedUs,
+            "decodeStartedUs" to decodeStartedUs,
+            "decodeCompletedUs" to decodeCompletedUs,
+            "eventPreparedUs" to monotonicUs(),
+        )
     }
 
     /**
